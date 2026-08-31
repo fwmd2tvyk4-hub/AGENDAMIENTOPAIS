@@ -1,65 +1,108 @@
 /**
- * FASE 6: Lógica del Panel Interno de Administración (Con Modal Glassmorphism)
- * Pragma AI Studio
+ * Panel de Administración — Pragma AI Studio
+ * Autenticación con usuario + contraseña / JWT (24h)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Referencias al DOM
-    const loginCard = document.getElementById('loginCard');
-    const dashboardCard = document.getElementById('dashboardCard');
-    const userInfoHeader = document.getElementById('userInfoHeader');
-    const loginForm = document.getElementById('loginForm');
-    const passwordInput = document.getElementById('password');
-    const loginAlert = document.getElementById('loginAlert');
-    const adminAlert = document.getElementById('adminAlert');
-    const btnLogout = document.getElementById('btnLogout');
+    const loginCard        = document.getElementById('loginCard');
+    const dashboardCard    = document.getElementById('dashboardCard');
+    const userInfoHeader   = document.getElementById('userInfoHeader');
+    const headerUsername   = document.getElementById('headerUsername');
+    const loginForm        = document.getElementById('loginForm');
+    const usernameInput    = document.getElementById('username');
+    const passwordInput    = document.getElementById('password');
+    const loginAlert       = document.getElementById('loginAlert');
+    const adminAlert       = document.getElementById('adminAlert');
+    const btnLogout        = document.getElementById('btnLogout');
 
-    // Pestañas
-    const navBtns = document.querySelectorAll('.nav-btn[data-tab]');
-    const tabAgenda = document.getElementById('tabAgenda');
-    const tabConfig = document.getElementById('tabConfig');
+    const navBtns          = document.querySelectorAll('.nav-btn[data-tab]');
+    const tabAgenda        = document.getElementById('tabAgenda');
+    const tabConfig        = document.getElementById('tabConfig');
+    const tabHistorial     = document.getElementById('tabHistorial');
 
-    // Filtros Agenda
-    const filtroFecha = document.getElementById('filtroFecha');
-    const btnVerTodas = document.getElementById('btnVerTodas');
-    const citasTbody = document.getElementById('citasTbody');
+    const filtroFecha      = document.getElementById('filtroFecha');
+    const btnVerTodas      = document.getElementById('btnVerTodas');
+    const citasTbody       = document.getElementById('citasTbody');
 
-    // Configuración Global & Días Bloqueados
-    const formConfigGlobal = document.getElementById('formConfigGlobal');
-    const duracionMinutosInput = document.getElementById('duracionMinutos');
+    const formConfigGlobal      = document.getElementById('formConfigGlobal');
+    const duracionMinutosInput  = document.getElementById('duracionMinutos');
     const anticipacionMinimaInput = document.getElementById('anticipacionMinima');
-    const ventanaDiasInput = document.getElementById('ventanaDias');
-    const formBloquearDia = document.getElementById('formBloquearDia');
-    const fechaBloquearInput = document.getElementById('fechaBloquear');
-    const motivoBloquearInput = document.getElementById('motivoBloquear');
-    const listaDiasBloqueados = document.getElementById('listaDiasBloqueados');
+    const ventanaDiasInput      = document.getElementById('ventanaDias');
+    const formBloquearDia       = document.getElementById('formBloquearDia');
+    const fechaBloquearInput    = document.getElementById('fechaBloquear');
+    const motivoBloquearInput   = document.getElementById('motivoBloquear');
+    const listaDiasBloqueados   = document.getElementById('listaDiasBloqueados');
 
-    // Modal Personalizado
-    const confirmModal = document.getElementById('confirmModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalMessage = document.getElementById('modalMessage');
-    const modalBtnCancel = document.getElementById('modalBtnCancel');
-    const modalBtnConfirm = document.getElementById('modalBtnConfirm');
+    const confirmModal        = document.getElementById('confirmModal');
+    const modalTitle          = document.getElementById('modalTitle');
+    const modalMessage        = document.getElementById('modalMessage');
+    const modalMotivoWrapper  = document.getElementById('modalMotivoWrapper');
+    const modalMotivo         = document.getElementById('modalMotivo');
+    const modalBtnCancel      = document.getElementById('modalBtnCancel');
+    const modalBtnConfirm     = document.getElementById('modalBtnConfirm');
 
-    let adminPassword = sessionStorage.getItem('admin_password') || '';
+    // Token JWT guardado en sessionStorage
+    let adminToken    = sessionStorage.getItem('admin_token') || '';
+    let adminUsername = sessionStorage.getItem('admin_username') || '';
 
     // ==============================================================================
-    // HELPER: MODAL GLASSMORISM DE CONFIRMACIÓN (Remplaza confirm nativo del browser)
+    // HELPER: cabecera de autenticación
     // ==============================================================================
+    const authHeader = () => ({ 'Authorization': `Bearer ${adminToken}` });
+
+    // ==============================================================================
+    // HELPER: MODAL GLASSMORPHISM
+    // ==============================================================================
+
+    // Modal simple (confirmación sin texto libre) — para desbloquear días, etc.
     const mostrarConfirmacionGlass = (titulo, mensaje) => {
         return new Promise((resolve) => {
-            modalTitle.textContent = titulo;
-            modalMessage.textContent = mensaje;
-            confirmModal.style.display = 'flex';
+            modalTitle.textContent        = titulo;
+            modalMessage.textContent      = mensaje;
+            modalMotivoWrapper.style.display = 'none';
+            modalMotivo.value             = '';
+            modalBtnCancel.textContent    = 'No, volver';
+            modalBtnConfirm.textContent   = 'Sí, Confirmar';
+            confirmModal.style.display    = 'flex';
 
             const cerrar = (resultado) => {
                 confirmModal.style.display = 'none';
-                modalBtnCancel.onclick = null;
+                modalBtnCancel.onclick  = null;
                 modalBtnConfirm.onclick = null;
                 resolve(resultado);
             };
 
-            modalBtnCancel.onclick = () => cerrar(false);
+            modalBtnCancel.onclick  = () => cerrar(false);
+            modalBtnConfirm.onclick = () => cerrar(true);
+        });
+    };
+
+    // Modal de cancelación de cita — con campo opcional de motivo
+    // Resuelve { confirmed: bool, motivo: string|null }
+    const mostrarModalCancelacion = (nombrePaciente) => {
+        return new Promise((resolve) => {
+            modalTitle.textContent        = 'Cancelar Cita';
+            modalMessage.textContent      = `¿Cancelar la cita de ${nombrePaciente}? Esta acción no se puede deshacer.`;
+            modalMotivoWrapper.style.display = 'block';
+            modalMotivo.value             = '';
+            modalBtnCancel.textContent    = 'No, volver';
+            modalBtnConfirm.textContent   = 'Sí, Cancelar Cita';
+            confirmModal.style.display    = 'flex';
+
+            // Foco en el textarea para facilitar escritura en desktop
+            setTimeout(() => modalMotivo.focus(), 50);
+
+            const cerrar = (confirmed) => {
+                confirmModal.style.display    = 'none';
+                modalMotivoWrapper.style.display = 'none';
+                modalBtnCancel.onclick  = null;
+                modalBtnConfirm.onclick = null;
+                const motivo = modalMotivo.value.trim() || null;
+                modalMotivo.value = '';
+                resolve({ confirmed, motivo });
+            };
+
+            modalBtnCancel.onclick  = () => cerrar(false);
             modalBtnConfirm.onclick = () => cerrar(true);
         });
     };
@@ -67,55 +110,78 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==============================================================================
     // 1. AUTENTICACIÓN
     // ==============================================================================
-    const verificarSesion = async () => {
-        if (!adminPassword) {
-            mostrarLogin();
-            return;
-        }
-
-        try {
-            await cargarCitas();
-            mostrarDashboard();
-        } catch (err) {
-            sessionStorage.removeItem('admin_password');
-            adminPassword = '';
-            mostrarLogin();
-            mostrarAlertaLogin('Sesión expirada o contraseña incorrecta');
-        }
+    const cerrarSesion = () => {
+        sessionStorage.removeItem('admin_token');
+        sessionStorage.removeItem('admin_username');
+        adminToken = '';
+        adminUsername = '';
+        mostrarLogin();
     };
 
     const mostrarLogin = () => {
-        loginCard.style.display = 'block';
+        loginCard.style.display    = 'block';
         dashboardCard.style.display = 'none';
         userInfoHeader.style.display = 'none';
     };
 
     const mostrarDashboard = () => {
-        loginCard.style.display = 'none';
+        loginCard.style.display    = 'none';
         dashboardCard.style.display = 'block';
-        userInfoHeader.style.display = 'block';
+        userInfoHeader.style.display = 'flex';
+        headerUsername.textContent = adminUsername;
+    };
+
+    const verificarSesion = async () => {
+        if (!adminToken) {
+            mostrarLogin();
+            return;
+        }
+        try {
+            await cargarCitas();
+            mostrarDashboard();
+        } catch (err) {
+            cerrarSesion();
+            mostrarAlertaLogin('Sesión expirada. Inicia sesión nuevamente.');
+        }
     };
 
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const pass = passwordInput.value.trim();
-        if (!pass) return;
+        mostrarAlertaLogin(null);
 
-        adminPassword = pass;
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!username || !password) return;
+
         try {
+            const res = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                mostrarAlertaLogin(data.error || 'Error al iniciar sesión.');
+                return;
+            }
+
+            adminToken    = data.token;
+            adminUsername = data.username;
+            sessionStorage.setItem('admin_token',    adminToken);
+            sessionStorage.setItem('admin_username', adminUsername);
+
+            passwordInput.value = '';
             await cargarCitas();
-            sessionStorage.setItem('admin_password', pass);
             mostrarDashboard();
-        } catch (err) {
-            adminPassword = '';
-            mostrarAlertaLogin(err.message || 'Contraseña incorrecta');
+        } catch (_) {
+            mostrarAlertaLogin('Error de conexión. Intenta de nuevo.');
         }
     });
 
-    btnLogout.addEventListener('click', () => {
-        sessionStorage.removeItem('admin_password');
-        window.location.reload();
-    });
+    btnLogout.addEventListener('click', cerrarSesion);
 
     // ==============================================================================
     // 2. CAMBIO DE PESTAÑAS
@@ -125,15 +191,20 @@ document.addEventListener('DOMContentLoaded', () => {
             navBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
+            tabAgenda.style.display    = 'none';
+            tabConfig.style.display    = 'none';
+            tabHistorial.style.display = 'none';
+
             const tab = btn.dataset.tab;
             if (tab === 'agenda') {
                 tabAgenda.style.display = 'block';
-                tabConfig.style.display = 'none';
                 cargarCitas(filtroFecha.value);
             } else if (tab === 'config') {
-                tabAgenda.style.display = 'none';
                 tabConfig.style.display = 'block';
                 cargarConfiguracion();
+            } else if (tab === 'historial') {
+                tabHistorial.style.display = 'block';
+                cargarHistorial();
             }
         });
     });
@@ -144,18 +215,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const cargarCitas = async (fecha = null) => {
         mostrarAlerta(null);
         let url = '/api/admin/citas';
-        if (fecha) {
-            url += `?fecha=${fecha}`;
-        }
+        if (fecha) url += `?fecha=${fecha}`;
 
-        const res = await fetch(url, {
-            headers: { 'x-admin-password': adminPassword }
-        });
+        const res = await fetch(url, { headers: authHeader() });
 
         if (res.status === 401) {
-            throw new Error('Contraseña no autorizada');
+            cerrarSesion();
+            throw new Error('Sesión expirada');
         }
-
         if (!res.ok) {
             const data = await res.json();
             throw new Error(data.error || 'Error al obtener la agenda');
@@ -174,27 +241,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 32px;">
                         No hay citas agendadas para el filtro seleccionado.
                     </td>
-                </tr>
-            `;
+                </tr>`;
             return;
         }
 
         citas.forEach(cita => {
             const tr = document.createElement('tr');
-            
-            const dateObj = new Date(cita.fecha_hora_inicio);
-            const fechaStr = dateObj.toLocaleDateString('es-PA', { 
-                timeZone: 'America/Panama', 
-                weekday: 'short', 
-                day: 'numeric', 
-                month: 'short' 
-            });
-            const horaStr = dateObj.toLocaleTimeString('es-PA', { 
-                timeZone: 'America/Panama', 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                hour12: true 
-            });
+
+            const dateObj  = new Date(cita.fecha_hora_inicio);
+            const fechaStr = dateObj.toLocaleDateString('es-PA', { timeZone: 'America/Panama', weekday: 'short', day: 'numeric', month: 'short' });
+            const horaStr  = dateObj.toLocaleTimeString('es-PA', { timeZone: 'America/Panama', hour: '2-digit', minute: '2-digit', hour12: true });
 
             const esProgramada = cita.estado === 'programada';
 
@@ -203,9 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="font-family: var(--font-heading); font-weight: 700; color: var(--color-text-main);">${horaStr}</div>
                     <div style="font-size: 0.78rem; color: var(--color-text-muted);">${fechaStr}</div>
                 </td>
-                <td>
-                    <strong style="color: var(--color-text-main);">${cita.nombre_paciente}</strong>
-                </td>
+                <td><strong style="color: var(--color-text-main);">${cita.nombre_paciente}</strong></td>
                 <td>
                     <div>+507 ${cita.telefono}</div>
                     <div style="font-size: 0.78rem; color: var(--color-text-muted);">${cita.correo}</div>
@@ -219,33 +273,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     </span>
                 </td>
                 <td>
-                    ${esProgramada ? `
-                        <button class="btn-sm-danger" onclick="cancelarCitaAdmin(${cita.id}, '${cita.nombre_paciente}')">
-                            Cancelar Cita
-                        </button>
-                    ` : '<span style="color: var(--color-text-muted); font-size: 0.8rem;">N/A</span>'}
-                </td>
-            `;
+                    ${esProgramada
+                        ? `<button class="btn-sm-danger" onclick="cancelarCitaAdmin(${cita.id}, '${cita.nombre_paciente.replace(/'/g, "\\'")}')">Cancelar Cita</button>`
+                        : '<span style="color: var(--color-text-muted); font-size: 0.8rem;">N/A</span>'
+                    }
+                </td>`;
             citasTbody.appendChild(tr);
         });
     };
 
-    // Función global con Modal Glassmorphism
     window.cancelarCitaAdmin = async (id, nombre) => {
-        const confirmado = await mostrarConfirmacionGlass(
-            'Cancelar Cita', 
-            `¿Estás seguro de que deseas cancelar la cita de ${nombre}?`
-        );
-        
-        if (!confirmado) return;
+        const { confirmed, motivo } = await mostrarModalCancelacion(nombre);
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`/api/admin/citas/${id}/cancelar`, {
                 method: 'POST',
-                headers: { 'x-admin-password': adminPassword }
+                headers: { 'Content-Type': 'application/json', ...authHeader() },
+                body: JSON.stringify({ motivo })
             });
 
             const data = await res.json();
+            if (res.status === 401) { cerrarSesion(); return; }
             if (!res.ok) throw new Error(data.error || 'Error cancelando cita');
 
             mostrarAlerta(data.mensaje, 'success');
@@ -267,21 +316,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const cargarConfiguracion = async () => {
         mostrarAlerta(null);
         try {
-            const res = await fetch('/api/admin/config', {
-                headers: { 'x-admin-password': adminPassword }
-            });
-            
+            const res = await fetch('/api/admin/config', { headers: authHeader() });
+            if (res.status === 401) { cerrarSesion(); return; }
+
             const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.error || 'Error al cargar configuración');
-            }
+            if (!res.ok) throw new Error(data.error || 'Error al cargar configuración');
 
-            // Llenar campos globales
-            duracionMinutosInput.value = data.configuracion.duracion_minutos;
+            duracionMinutosInput.value    = data.configuracion.duracion_minutos;
             anticipacionMinimaInput.value = data.configuracion.anticipacion_minima_horas;
-            ventanaDiasInput.value = data.configuracion.ventana_dias;
+            ventanaDiasInput.value        = data.configuracion.ventana_dias;
 
-            // Renderizar lista de días bloqueados
             renderizarDiasBloqueados(data.dias_bloqueados);
         } catch (err) {
             mostrarAlerta(err.message, 'danger');
@@ -297,14 +341,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         dias.forEach(item => {
             const div = document.createElement('div');
-            div.style.cssText = `
-                display: flex; justify-content: space-between; align-items: center;
-                background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border);
-                padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 0.88rem;
-            `;
+            div.style.cssText = `display: flex; justify-content: space-between; align-items: center;
+                background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
+                padding: 10px 14px; border-radius: 8px; margin-bottom: 8px; font-size: 0.88rem;`;
 
             const [y, m, d] = item.fecha.split('T')[0].split('-');
-
             div.innerHTML = `
                 <div>
                     <strong style="color: var(--color-text-main);">${d}/${m}/${y}</strong>
@@ -312,8 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <button class="btn-sm-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="eliminarDiaBloqueado(${item.id})">
                     Eliminar
-                </button>
-            `;
+                </button>`;
             listaDiasBloqueados.appendChild(div);
         });
     };
@@ -323,20 +363,16 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/admin/config', {
                 method: 'PUT',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-admin-password': adminPassword 
-                },
+                headers: { 'Content-Type': 'application/json', ...authHeader() },
                 body: JSON.stringify({
-                    duracion_minutos: duracionMinutosInput.value,
+                    duracion_minutos:          duracionMinutosInput.value,
                     anticipacion_minima_horas: anticipacionMinimaInput.value,
-                    ventana_dias: ventanaDiasInput.value
+                    ventana_dias:              ventanaDiasInput.value
                 })
             });
-
+            if (res.status === 401) { cerrarSesion(); return; }
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error guardando');
-
             mostrarAlerta(data.mensaje, 'success');
         } catch (err) {
             mostrarAlerta(err.message, 'danger');
@@ -345,26 +381,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     formBloquearDia.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const fecha = fechaBloquearInput.value;
+        const fecha  = fechaBloquearInput.value;
         const motivo = motivoBloquearInput.value.trim();
-
         if (!fecha) return;
 
         try {
             const res = await fetch('/api/admin/dias-bloqueados', {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-admin-password': adminPassword 
-                },
+                headers: { 'Content-Type': 'application/json', ...authHeader() },
                 body: JSON.stringify({ fecha, motivo })
             });
-
+            if (res.status === 401) { cerrarSesion(); return; }
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error bloqueando día');
 
             mostrarAlerta(data.mensaje, 'success');
-            fechaBloquearInput.value = '';
+            fechaBloquearInput.value  = '';
             motivoBloquearInput.value = '';
             cargarConfiguracion();
         } catch (err) {
@@ -373,18 +405,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     window.eliminarDiaBloqueado = async (id) => {
-        const confirmado = await mostrarConfirmacionGlass(
-            'Desbloquear Día',
-            '¿Estás seguro de que deseas desbloquear esta fecha?'
-        );
+        const confirmado = await mostrarConfirmacionGlass('Desbloquear Día', '¿Estás seguro de que deseas desbloquear esta fecha?');
         if (!confirmado) return;
 
         try {
             const res = await fetch(`/api/admin/dias-bloqueados/${id}`, {
                 method: 'DELETE',
-                headers: { 'x-admin-password': adminPassword }
+                headers: authHeader()
             });
-
+            if (res.status === 401) { cerrarSesion(); return; }
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error desbloqueando día');
 
@@ -395,23 +424,121 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Auxiliares
-    function mostrarAlerta(msg, tipo = 'danger') {
-        if (!msg) {
-            adminAlert.style.display = 'none';
+    // ==============================================================================
+    // 5. HISTORIAL DE AUDITORÍA
+    // ==============================================================================
+    const historialDesde      = document.getElementById('historialDesde');
+    const historialHasta      = document.getElementById('historialHasta');
+    const btnFiltrarHistorial = document.getElementById('btnFiltrarHistorial');
+    const btnLimpiarHistorial = document.getElementById('btnLimpiarHistorial');
+    const historialTbody      = document.getElementById('historialTbody');
+
+    const ETIQUETAS_ACCION = {
+        cancelar_cita: 'Canceló cita',
+    };
+
+    const cargarHistorial = async (desde = null, hasta = null) => {
+        mostrarAlerta(null);
+        historialTbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--color-text-muted); padding:32px;">Cargando...</td></tr>`;
+
+        let url = '/api/admin/audit-log';
+        const params = new URLSearchParams();
+        if (desde) params.set('desde', desde);
+        if (hasta) params.set('hasta', hasta);
+        if ([...params].length) url += '?' + params.toString();
+
+        try {
+            const res = await fetch(url, { headers: authHeader() });
+            if (res.status === 401) { cerrarSesion(); return; }
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Error al obtener historial');
+            }
+            const registros = await res.json();
+            renderizarHistorial(registros);
+        } catch (err) {
+            mostrarAlerta(err.message, 'danger');
+            historialTbody.innerHTML = '';
+        }
+    };
+
+    const renderizarHistorial = (registros) => {
+        historialTbody.innerHTML = '';
+
+        if (!registros || registros.length === 0) {
+            historialTbody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align:center; color:var(--color-text-muted); padding:32px;">
+                        No hay acciones registradas para el filtro seleccionado.
+                    </td>
+                </tr>`;
             return;
         }
-        adminAlert.className = `alert alert-${tipo}`;
+
+        registros.forEach(r => {
+            const tr = document.createElement('tr');
+
+            // Fecha/hora de la acción en hora Panamá
+            const accionDate = new Date(r.creado_en);
+            const accionFecha = accionDate.toLocaleDateString('es-PA', { timeZone: 'America/Panama', day: 'numeric', month: 'short', year: 'numeric' });
+            const accionHora  = accionDate.toLocaleTimeString('es-PA', { timeZone: 'America/Panama', hour: '2-digit', minute: '2-digit', hour12: true });
+
+            // Fecha/hora de la cita afectada en hora Panamá
+            let citaStr = '<span style="color:var(--color-text-muted)">—</span>';
+            if (r.fecha_hora_inicio) {
+                const citaDate = new Date(r.fecha_hora_inicio);
+                const cf = citaDate.toLocaleDateString('es-PA', { timeZone: 'America/Panama', day: 'numeric', month: 'short' });
+                const ch = citaDate.toLocaleTimeString('es-PA', { timeZone: 'America/Panama', hour: '2-digit', minute: '2-digit', hour12: true });
+                citaStr = `<div style="font-size:0.85rem">${cf}</div><div style="font-size:0.78rem;color:var(--color-text-muted)">${ch}</div>`;
+            }
+
+            const pacienteStr = r.nombre_paciente
+                ? `<strong style="color:var(--color-text-main)">${r.nombre_paciente}</strong>`
+                : `<span style="color:var(--color-text-muted);font-style:italic">Cita eliminada</span>`;
+
+            const motivoStr = r.motivo_admin
+                ? `<span style="font-size:0.85rem">${r.motivo_admin}</span>`
+                : `<span style="color:var(--color-text-muted)">—</span>`;
+
+            const etiqueta = ETIQUETAS_ACCION[r.accion] || r.accion;
+
+            tr.innerHTML = `
+                <td>
+                    <div style="font-family:var(--font-heading);font-weight:700;color:var(--color-text-main);font-size:0.85rem">${accionHora}</div>
+                    <div style="font-size:0.78rem;color:var(--color-text-muted)">${accionFecha}</div>
+                </td>
+                <td style="font-family:var(--font-heading);font-weight:700;color:var(--color-cyan);font-size:0.9rem">${r.admin_username}</td>
+                <td><span class="badge badge-cancelada" style="font-size:0.72rem">${etiqueta}</span></td>
+                <td>${pacienteStr}</td>
+                <td>${citaStr}</td>
+                <td>${motivoStr}</td>`;
+            historialTbody.appendChild(tr);
+        });
+    };
+
+    btnFiltrarHistorial.addEventListener('click', () => {
+        cargarHistorial(historialDesde.value || null, historialHasta.value || null);
+    });
+
+    btnLimpiarHistorial.addEventListener('click', () => {
+        historialDesde.value = '';
+        historialHasta.value = '';
+        cargarHistorial();
+    });
+
+    // ==============================================================================
+    // AUXILIARES
+    // ==============================================================================
+    function mostrarAlerta(msg, tipo = 'danger') {
+        if (!msg) { adminAlert.style.display = 'none'; return; }
+        adminAlert.className   = `alert alert-${tipo}`;
         adminAlert.textContent = msg;
         adminAlert.style.display = 'block';
     }
 
     function mostrarAlertaLogin(msg) {
-        if (!msg) {
-            loginAlert.style.display = 'none';
-            return;
-        }
-        loginAlert.textContent = msg;
+        if (!msg) { loginAlert.style.display = 'none'; return; }
+        loginAlert.textContent   = msg;
         loginAlert.style.display = 'block';
     }
 

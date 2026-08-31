@@ -153,7 +153,8 @@
                 <div class="brand-subtitle">Panel de Administración</div>
             </div>
         </a>
-        <div id="userInfoHeader" style="display: none;">
+        <div id="userInfoHeader" style="display: none; align-items: center; gap: 12px;">
+            <span id="headerUsername" style="font-family: var(--font-heading); font-size: 0.85rem; color: var(--color-text-muted);"></span>
             <button id="btnLogout" class="btn-sm-danger" style="background: rgba(255,255,255,0.05); color: var(--color-text-main); border-color: var(--glass-border);">
                 Cerrar Sesión
             </button>
@@ -171,15 +172,19 @@
                     </svg>
                 </div>
                 <h1 class="section-title" style="font-size: 1.4rem;">Acceso al Panel</h1>
-                <p class="section-desc" style="margin-bottom: 0;">Ingresa la contraseña de administración.</p>
+                <p class="section-desc" style="margin-bottom: 0;">Ingresa tu usuario y contraseña.</p>
             </div>
 
             <div id="loginAlert" class="alert alert-danger" style="display: none;"></div>
 
             <form id="loginForm">
                 <div class="form-group">
-                    <label for="password" class="form-label">Contraseña de Administrador</label>
-                    <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                    <label for="username" class="form-label">Usuario</label>
+                    <input type="text" id="username" class="form-control" placeholder="Ej. orlando" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
                 </div>
                 <button type="submit" class="btn-primary" style="margin-top: 8px;">
                     Acceder al Panel
@@ -196,6 +201,7 @@
             <nav class="admin-nav">
                 <button class="nav-btn active" data-tab="agenda">📋 Agenda de Citas</button>
                 <button class="nav-btn" data-tab="config">⚙️ Configuración & Horarios</button>
+                <button class="nav-btn" data-tab="historial">🕓 Historial</button>
             </nav>
 
             <!-- SECCIÓN 1: AGENDA DE CITAS -->
@@ -292,6 +298,50 @@
                 </div>
             </div>
 
+            <!-- SECCIÓN 3: HISTORIAL DE AUDITORÍA -->
+            <div id="tabHistorial" style="display: none;">
+                <div class="filter-bar">
+                    <div>
+                        <h2 class="section-title" style="font-size: 1.3rem;">Historial de Acciones</h2>
+                        <p class="section-desc" style="margin-bottom: 0;">Registro de todas las acciones realizadas por administradores.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 0.8rem; color: var(--color-text-muted); white-space: nowrap;">Desde</label>
+                            <input type="date" id="historialDesde" class="form-control" style="width: auto; padding: 10px 12px;">
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 0.8rem; color: var(--color-text-muted); white-space: nowrap;">Hasta</label>
+                            <input type="date" id="historialHasta" class="form-control" style="width: auto; padding: 10px 12px;">
+                        </div>
+                        <button id="btnFiltrarHistorial" class="nav-btn" style="padding: 10px 14px; border-color: var(--color-cyan); color: var(--color-cyan);">Filtrar</button>
+                        <button id="btnLimpiarHistorial" class="nav-btn" style="padding: 10px 14px;">Ver todo</button>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha &amp; Hora</th>
+                                <th>Admin</th>
+                                <th>Acción</th>
+                                <th>Paciente</th>
+                                <th>Cita</th>
+                                <th>Motivo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historialTbody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 32px;">
+                                    Cargando historial...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -306,11 +356,16 @@
                 </svg>
             </div>
             <h3 id="modalTitle" class="section-title" style="font-size: 1.25rem; margin-bottom: 8px;">¿Confirmar Acción?</h3>
-            <p id="modalMessage" class="section-desc" style="margin-bottom: 24px;">Esta acción no se puede deshacer.</p>
-            
+            <p id="modalMessage" class="section-desc" style="margin-bottom: 16px;">Esta acción no se puede deshacer.</p>
+
+            <div id="modalMotivoWrapper" style="display: none; text-align: left; margin-bottom: 20px;">
+                <label for="modalMotivo" class="form-label" style="font-size: 0.82rem;">Motivo de cancelación <span style="color: var(--color-text-muted); font-weight: 400;">(opcional)</span></label>
+                <textarea id="modalMotivo" class="form-control" rows="2" placeholder="Ej. El paciente llamó para reprogramar..." style="resize: none; font-size: 0.9rem;"></textarea>
+            </div>
+
             <div style="display: flex; gap: 12px; justify-content: center;">
-                <button id="modalBtnCancel" class="nav-btn" style="flex: 1; padding: 12px; font-size: 0.9rem;">Cancelar</button>
-                <button id="modalBtnConfirm" class="btn-sm-danger" style="flex: 1; padding: 12px; font-size: 0.9rem; font-family: var(--font-heading);">Sí, Confirmar</button>
+                <button id="modalBtnCancel" class="nav-btn" style="flex: 1; padding: 12px; font-size: 0.9rem;">No, volver</button>
+                <button id="modalBtnConfirm" class="btn-sm-danger" style="flex: 1; padding: 12px; font-size: 0.9rem; font-family: var(--font-heading);">Sí, Cancelar Cita</button>
             </div>
         </div>
     </div>
