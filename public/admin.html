@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración | Pragma AI Studio</title>
+    
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Estilos específicos para las tablas e interfaz del panel admin */
+        .admin-nav {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 16px;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            color: var(--color-text-muted);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            border-color: var(--color-cyan);
+            color: var(--color-text-main);
+        }
+
+        .nav-btn.active {
+            background: rgba(0, 195, 222, 0.12);
+            border-color: var(--color-cyan);
+            color: var(--color-cyan);
+            box-shadow: 0 0 15px var(--color-cyan-glow);
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-top: 16px;
+        }
+
+        .admin-table th {
+            background: rgba(4, 14, 21, 0.6);
+            color: var(--color-text-muted);
+            font-family: var(--font-heading);
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .admin-table th:first-child { border-radius: 10px 0 0 0; }
+        .admin-table th:last-child { border-radius: 0 10px 0 0; }
+
+        .admin-table td {
+            padding: 14px 16px;
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .admin-table tr:hover td {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-family: var(--font-heading);
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .badge-programada {
+            background: rgba(0, 195, 222, 0.15);
+            color: var(--color-cyan);
+            border: 1px solid var(--color-cyan);
+        }
+
+        .badge-cancelada {
+            background: rgba(255, 77, 77, 0.15);
+            color: var(--color-error);
+            border: 1px solid var(--color-error);
+        }
+
+        .btn-sm-danger {
+            background: rgba(255, 77, 77, 0.2);
+            color: var(--color-error);
+            border: 1px solid var(--color-error);
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            font-family: var(--font-heading);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-sm-danger:hover {
+            background: var(--color-error);
+            color: #FFFFFF;
+            box-shadow: 0 0 12px rgba(255, 77, 77, 0.4);
+        }
+
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 { grid-template-columns: 1fr; }
+            .admin-table { display: block; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Glassmorphism -->
+    <header class="header">
+        <a href="index.html" class="brand">
+            <img src="logo.svg" alt="Pragma AI Studio Logo" class="brand-logo-img">
+            <div>
+                <div class="brand-title">Pragma AI Studio</div>
+                <div class="brand-subtitle">Panel de Administración</div>
+            </div>
+        </a>
+        <div id="userInfoHeader" style="display: none;">
+            <button id="btnLogout" class="btn-sm-danger" style="background: rgba(255,255,255,0.05); color: var(--color-text-main); border-color: var(--glass-border);">
+                Cerrar Sesión
+            </button>
+        </div>
+    </header>
+
+    <main class="main-container">
+        <!-- VISTA DE LOGIN -->
+        <div id="loginCard" class="glass-card" style="max-width: 420px; margin: 60px auto;">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <div style="width: 56px; height: 56px; background: rgba(0, 195, 222, 0.15); border: 1px solid var(--color-cyan); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; color: var(--color-cyan);">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <h1 class="section-title" style="font-size: 1.4rem;">Acceso al Panel</h1>
+                <p class="section-desc" style="margin-bottom: 0;">Ingresa la contraseña de administración.</p>
+            </div>
+
+            <div id="loginAlert" class="alert alert-danger" style="display: none;"></div>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="password" class="form-label">Contraseña de Administrador</label>
+                    <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top: 8px;">
+                    Acceder al Panel
+                </button>
+            </form>
+        </div>
+
+        <!-- VISTA DEL DASHBOARD PRINCIPAL -->
+        <div id="dashboardCard" class="glass-card" style="display: none;">
+            
+            <div id="adminAlert" class="alert" style="display: none;"></div>
+
+            <!-- Navegación entre Pestañas -->
+            <nav class="admin-nav">
+                <button class="nav-btn active" data-tab="agenda">📋 Agenda de Citas</button>
+                <button class="nav-btn" data-tab="config">⚙️ Configuración & Horarios</button>
+            </nav>
+
+            <!-- SECCIÓN 1: AGENDA DE CITAS -->
+            <div id="tabAgenda">
+                <div class="filter-bar">
+                    <div>
+                        <h2 class="section-title" style="font-size: 1.3rem;">Citas Agendadas</h2>
+                        <p class="section-desc" style="margin-bottom: 0;">Visualiza y gestiona las citas del día o del historial.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="date" id="filtroFecha" class="form-control" style="width: auto; padding: 10px 12px;">
+                        <button id="btnVerTodas" class="nav-btn" style="padding: 10px 14px;">Ver Futuras</button>
+                    </div>
+                </div>
+
+                <div id="tablaCitasContainer">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha & Hora</th>
+                                <th>Paciente</th>
+                                <th>Contacto</th>
+                                <th>Motivo</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="citasTbody">
+                            <tr>
+                                <td colspan="6" style="text-align: center; color: var(--color-text-muted); padding: 32px;">
+                                    Cargando citas...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: CONFIGURACIÓN & DÍAS BLOQUEADOS -->
+            <div id="tabConfig" style="display: none;">
+                <div class="grid-2">
+                    
+                    <!-- Parámetros Globales -->
+                    <div>
+                        <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 16px;">Parámetros del Sistema</h2>
+                        <form id="formConfigGlobal">
+                            <div class="form-group">
+                                <label for="duracionMinutos" class="form-label">Duración de la Cita (Minutos)</label>
+                                <input type="number" id="duracionMinutos" class="form-control" min="10" step="5" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="anticipacionMinima" class="form-label">Anticipación Mínima para Agendar (Horas)</label>
+                                <input type="number" id="anticipacionMinima" class="form-control" min="0" required>
+                                <div class="form-hint">Evita citas de último minuto.</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="ventanaDias" class="form-label">Ventana Futura de Reserva (Días)</label>
+                                <input type="number" id="ventanaDias" class="form-control" min="1" required>
+                                <div class="form-hint">Días hacia adelante que el paciente puede ver en el calendario.</div>
+                            </div>
+
+                            <button type="submit" class="btn-primary" style="margin-top: 12px; font-size: 0.95rem;">
+                                Guardar Parámetros
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Días Bloqueados (Feriados / Vacaciones) -->
+                    <div>
+                        <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 16px;">Días Bloqueados (Feriados)</h2>
+                        
+                        <form id="formBloquearDia" style="margin-bottom: 20px; background: rgba(4, 14, 21, 0.4); padding: 16px; border-radius: 12px; border: 1px solid var(--glass-border);">
+                            <div class="form-group">
+                                <label for="fechaBloquear" class="form-label">Fecha a Bloquear</label>
+                                <input type="date" id="fechaBloquear" class="form-control" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="motivoBloquear" class="form-label">Motivo (Opcional)</label>
+                                <input type="text" id="motivoBloquear" class="form-control" placeholder="Ej. Feriado Nacional">
+                            </div>
+                            <button type="submit" class="nav-btn" style="width: 100%; border-color: var(--color-cyan); color: var(--color-cyan);">
+                                + Bloquear Fecha
+                            </button>
+                        </form>
+
+                        <label class="form-label">Fechas bloqueadas actualmente:</label>
+                        <div id="listaDiasBloqueados" style="max-height: 250px; overflow-y: auto; margin-top: 8px;">
+                            <!-- Se renderizará dinámicamente -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal Glassmorphism de Confirmación Personalizado -->
+    <div id="confirmModal" style="display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(4, 14, 21, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); align-items: center; justify-content: center; padding: 20px;">
+        <div class="glass-card" style="max-width: 420px; width: 100%; text-align: center; border-color: rgba(255, 255, 255, 0.2); box-shadow: 0 25px 60px rgba(0,0,0,0.7); animation: fadeIn 0.2s ease;">
+            <div style="width: 56px; height: 56px; background: rgba(255, 77, 77, 0.15); border: 1px solid var(--color-error); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; color: var(--color-error); box-shadow: 0 0 20px rgba(255, 77, 77, 0.3);">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </div>
+            <h3 id="modalTitle" class="section-title" style="font-size: 1.25rem; margin-bottom: 8px;">¿Confirmar Acción?</h3>
+            <p id="modalMessage" class="section-desc" style="margin-bottom: 24px;">Esta acción no se puede deshacer.</p>
+            
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button id="modalBtnCancel" class="nav-btn" style="flex: 1; padding: 12px; font-size: 0.9rem;">Cancelar</button>
+                <button id="modalBtnConfirm" class="btn-sm-danger" style="flex: 1; padding: 12px; font-size: 0.9rem; font-family: var(--font-heading);">Sí, Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        &copy; 2026 Pragma AI Studio. Panel de Control de Agendamiento.
+    </footer>
+
+    <script src="admin.js"></script>
+</body>
+</html>

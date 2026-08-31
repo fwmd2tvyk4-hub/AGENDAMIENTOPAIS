@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendamiento de Citas | Pragma AI Studio</title>
+    
+    <!-- Favicon Real de Pragma AI Studio -->
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    
+    <!-- Tipografía Oficial de la Marca: Archivo (Titulares) & Schibsted Grotesk (Cuerpo) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Header Glassmorphism -->
+    <header class="header">
+        <a href="index.html" class="brand">
+            <img src="logo.svg" alt="Pragma AI Studio Logo" class="brand-logo-img">
+            <div>
+                <div class="brand-title">Pragma AI Studio</div>
+                <div class="brand-subtitle">Demo de Agendamiento</div>
+            </div>
+        </a>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+        <div class="glass-card" id="mainCard">
+
+            <!-- Alertas -->
+            <div id="alertBox" class="alert" style="display: none;"></div>
+
+            <!-- VISTA 1: RESERVA DE CITA -->
+            <div id="bookingView">
+                <h1 class="section-title">Reserva tu cita</h1>
+                <p class="section-desc">Selecciona el día y la hora de tu preferencia para agendar con nuestro equipo.</p>
+
+                <!-- Barra de Navegación de Semanas -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <button id="btnPrevWeek" class="slot-btn" style="min-height: 38px; padding: 6px 14px; font-size: 0.85rem; width: auto;" disabled>
+                        &larr; Anterior
+                    </button>
+                    <span id="weekRangeLabel" style="font-family: var(--font-heading); font-size: 0.9rem; font-weight: 800; color: var(--color-cyan);">
+                        Semana Actual
+                    </span>
+                    <button id="btnNextWeek" class="slot-btn" style="min-height: 38px; padding: 6px 14px; font-size: 0.85rem; width: auto;">
+                        Siguiente &rarr;
+                    </button>
+                </div>
+
+                <!-- Selector Horizontal de Días (Vidrio Esmerilado) -->
+                <div id="weekSelector" class="week-selector">
+                    <div style="padding: 16px; color: var(--color-text-muted); font-size: 0.9rem;">
+                        Cargando disponibilidad de la semana...
+                    </div>
+                </div>
+
+                <!-- Rejilla de Horarios Disponible -->
+                <div class="slots-container">
+                    <label class="form-label" style="margin-bottom: 12px; font-size: 0.9rem; color: var(--color-cyan);">
+                        Horarios libres para el día seleccionado:
+                    </label>
+                    <div id="slotsGrid" class="slots-grid">
+                        <!-- El script renderizará los botones aquí o el estado vacío completo -->
+                    </div>
+                </div>
+
+                <!-- Formulario de Contacto -->
+                <form id="appointmentForm" class="booking-form" style="display: none;">
+                    <h2 class="section-title" style="font-size: 1.25rem; margin-bottom: 20px; color: var(--color-text-main);">
+                        Completa tus datos
+                    </h2>
+                    
+                    <input type="hidden" id="selectedUtcSlot" name="fecha_hora_inicio">
+
+                    <div class="form-group">
+                        <label for="nombre" class="form-label">Nombre y Apellido *</label>
+                        <input type="text" id="nombre" class="form-control" placeholder="Ej. Carlos Pérez" required autocomplete="name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telefono" class="form-label">Teléfono de Panamá *</label>
+                        <input type="tel" id="telefono" class="form-control" placeholder="Ej. 66112233" required autocomplete="tel">
+                        <div class="form-hint">Número móvil o fijo de Panamá (8 dígitos).</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="correo" class="form-label">Correo Electrónico *</label>
+                        <input type="email" id="correo" class="form-control" placeholder="ejemplo@correo.com" required autocomplete="email">
+                        <div class="form-hint">Te enviaremos la confirmación y el enlace directo de cancelación a este correo.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="motivo" class="form-label">Motivo de la cita (Opcional)</label>
+                        <textarea id="motivo" class="form-control" rows="2" placeholder="Cuéntanos brevemente sobre tu consulta..."></textarea>
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="btn-primary">
+                        <span>Confirmar y Agendar Cita</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- VISTA 2: CONFIRMACIÓN EXITOSA -->
+            <div id="confirmationScreen" class="confirmation-box" style="display: none;">
+                <div class="icon-success">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                </div>
+                <h2 class="section-title">¡Cita Agendada con Éxito!</h2>
+                <p class="section-desc">Hemos enviado el correo de confirmación con los detalles y el link de cancelación.</p>
+
+                <div class="details-summary">
+                    <div class="summary-item">
+                        <span class="summary-label">Paciente</span>
+                        <span class="summary-value" id="confNombre">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Fecha y Hora</span>
+                        <span class="summary-value" id="confFechaHora">-</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">Ubicación</span>
+                        <span class="summary-value">Plaza Costa del Este, Panamá</span>
+                    </div>
+                </div>
+
+                <button type="button" class="btn-primary" onclick="window.location.reload();">
+                    Agendar otra cita
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        &copy; 2026 Pragma AI Studio. Automatización Inteligente de Procesos.
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

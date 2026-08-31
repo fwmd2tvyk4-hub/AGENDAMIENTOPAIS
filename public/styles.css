@@ -1,0 +1,463 @@
+/* ==============================================================================
+   PRAGMA AI STUDIO - DISEÑO GLASSMORFISMO OSCURO (FASE 5 REDISEÑO)
+   Paleta: Azul Marino #0A2231 | Cian #00C3DE | Blanco Hueso #F2F6F7
+   Tipografía: Archivo (Titulares) & Schibsted Grotesk (Cuerpo)
+   ============================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+    --color-navy: #0A2231;
+    --color-navy-dark: #040E15;
+    --color-cyan: #00C3DE;
+    --color-cyan-hover: #33D2E7;
+    --color-cyan-glow: rgba(0, 195, 222, 0.4);
+    --color-text-main: #F2F6F7;
+    --color-text-muted: #8A99AD;
+    --color-error: #FF4D4D;
+    --color-error-bg: rgba(255, 77, 77, 0.15);
+    
+    /* Glassmorphism Variables */
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-bg-hover: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-border-focus: #00C3DE;
+    --glass-blur: blur(20px);
+    --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    
+    --font-heading: 'Archivo', sans-serif;
+    --font-body: 'Schibsted Grotesk', sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-body);
+    background: radial-gradient(circle at 50% 0%, #0D2D42 0%, #0A2231 50%, #040E15 100%);
+    background-attachment: fixed;
+    color: var(--color-text-main);
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.header {
+    background: rgba(4, 14, 21, 0.7);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 16px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+}
+
+.brand-logo-img {
+    width: 36px;
+    height: 36px;
+    filter: drop-shadow(0 0 8px var(--color-cyan-glow));
+}
+
+.brand-title {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--color-text-main);
+    line-height: 1.1;
+}
+
+.brand-subtitle {
+    font-size: 0.75rem;
+    color: var(--color-cyan);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Main Container */
+.main-container {
+    max-width: 850px;
+    width: 100%;
+    margin: 40px auto;
+    padding: 0 20px;
+    flex: 1;
+}
+
+/* Glass Card Component */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 36px;
+    box-shadow: var(--glass-shadow);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+@media (max-width: 640px) {
+    .main-container {
+        margin: 20px auto;
+        padding: 0 12px;
+    }
+    .glass-card {
+        padding: 24px 18px;
+        border-radius: 16px;
+    }
+}
+
+.section-title {
+    font-family: var(--font-heading);
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--color-text-main);
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+}
+
+.section-desc {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+    margin-bottom: 28px;
+}
+
+/* Selector de Días (Tarjetas de Vidrio Horizontales) */
+.week-selector {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 4px 4px 16px 4px;
+    margin-bottom: 28px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+}
+
+.week-selector::-webkit-scrollbar {
+    height: 6px;
+}
+
+.week-selector::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+}
+
+.week-selector::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+.day-tab {
+    flex: 0 0 105px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+}
+
+.day-tab:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(0, 195, 222, 0.5);
+    transform: translateY(-2px);
+}
+
+.day-tab.active {
+    background: rgba(0, 195, 222, 0.12);
+    border-color: var(--color-cyan);
+    box-shadow: 0 0 20px var(--color-cyan-glow), inset 0 0 10px rgba(0, 195, 222, 0.15);
+    transform: translateY(-2px);
+}
+
+.day-name {
+    font-family: var(--font-heading);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--color-text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.day-tab.active .day-name {
+    color: var(--color-cyan);
+}
+
+.day-number {
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: var(--color-text-main);
+    line-height: 1.1;
+}
+
+.day-month {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+.day-tab.active .day-month {
+    color: #C1E9F0;
+}
+
+/* Horarios (Rejilla de Botones Pill) */
+.slots-container {
+    margin-bottom: 32px;
+}
+
+.slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 12px;
+    width: 100%;
+}
+
+.slot-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 12px 10px;
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.slot-btn:hover {
+    border-color: var(--color-cyan);
+    color: var(--color-cyan);
+    box-shadow: 0 0 15px var(--color-cyan-glow);
+    background: rgba(0, 195, 222, 0.08);
+}
+
+.slot-btn.selected {
+    background: var(--color-cyan);
+    color: var(--color-navy);
+    border-color: var(--color-cyan);
+    box-shadow: 0 0 25px var(--color-cyan-glow);
+    font-weight: 900;
+}
+
+/* ESTADO DE NO HAY HORARIOS DISPONIBLES (CORREGIDO) */
+.empty-slots {
+    grid-column: 1 / -1;
+    width: 100%;
+    text-align: center;
+    padding: 36px 20px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.empty-slots svg {
+    opacity: 0.6;
+    color: var(--color-cyan);
+}
+
+/* Formulario */
+.booking-form {
+    border-top: 1px solid var(--glass-border);
+    padding-top: 28px;
+    margin-top: 28px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    font-family: var(--font-heading);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(4, 14, 21, 0.6);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    color: var(--color-text-main);
+    transition: all 0.2s ease;
+}
+
+.form-control::placeholder {
+    color: #52637A;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--color-cyan);
+    box-shadow: 0 0 15px var(--color-cyan-glow);
+    background: rgba(4, 14, 21, 0.85);
+}
+
+.form-hint {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-top: 6px;
+}
+
+/* Botón Principal */
+.btn-primary {
+    width: 100%;
+    background: var(--color-cyan);
+    color: var(--color-navy);
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: 0.3px;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 24px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 54px;
+    box-shadow: 0 4px 20px var(--color-cyan-glow);
+}
+
+.btn-primary:hover {
+    background: var(--color-cyan-hover);
+    box-shadow: 0 6px 28px rgba(0, 195, 222, 0.6);
+    transform: translateY(-2px);
+}
+
+.btn-primary:disabled {
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.4);
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Alertas */
+.alert {
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    margin-bottom: 24px;
+    backdrop-filter: var(--glass-blur);
+}
+
+.alert-danger {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+    border: 1px solid rgba(255, 77, 77, 0.4);
+}
+
+.alert-success {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34D399;
+    border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+/* Confirmación */
+.confirmation-box {
+    text-align: center;
+    padding: 16px 0;
+}
+
+.icon-success {
+    width: 72px;
+    height: 72px;
+    background: rgba(0, 195, 222, 0.15);
+    color: var(--color-cyan);
+    border: 1px solid var(--color-cyan);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px auto;
+    box-shadow: 0 0 30px var(--color-cyan-glow);
+}
+
+.details-summary {
+    background: rgba(4, 14, 21, 0.5);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 24px;
+    text-align: left;
+    margin: 28px 0;
+}
+
+.summary-item {
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.summary-label {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.summary-value {
+    color: var(--color-text-main);
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    border-top: 1px solid var(--glass-border);
+    background: rgba(4, 14, 21, 0.8);
+    backdrop-filter: var(--glass-blur);
+}

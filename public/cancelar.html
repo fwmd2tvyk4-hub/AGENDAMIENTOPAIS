@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cancelar Cita | Pragma AI Studio</title>
+    
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header class="header">
+        <a href="index.html" class="brand">
+            <img src="logo.svg" alt="Pragma AI Studio Logo" class="brand-logo-img">
+            <div>
+                <div class="brand-title">Pragma AI Studio</div>
+                <div class="brand-subtitle">Cancelación de Cita</div>
+            </div>
+        </a>
+    </header>
+
+    <main class="main-container">
+        <div class="glass-card" style="max-width: 520px; margin: 40px auto; text-align: center;">
+            
+            <div id="alertBox" class="alert" style="display: none;"></div>
+
+            <div id="cancelInitialState">
+                <h1 class="section-title" style="margin-bottom: 12px; font-size: 1.4rem;">¿Deseas cancelar tu cita?</h1>
+                <p class="section-desc" style="margin-bottom: 24px;">Al confirmar, la cita quedará anulada y el cupo se liberará inmediatamente para otros pacientes.</p>
+
+                <button id="btnConfirmarCancelacion" class="btn-primary" style="background: var(--color-error); color: #FFFFFF; box-shadow: 0 4px 20px rgba(255, 77, 77, 0.4);">
+                    Sí, Cancelar mi Cita
+                </button>
+                
+                <p style="margin-top: 20px;">
+                    <a href="index.html" style="color: var(--color-text-muted); font-size: 0.9rem; text-decoration: underline;">Volver a la página principal</a>
+                </p>
+            </div>
+
+            <div id="cancelSuccessState" style="display: none;">
+                <div class="icon-success" style="background: rgba(255, 77, 77, 0.15); border-color: var(--color-error); color: var(--color-error); box-shadow: 0 0 30px rgba(255, 77, 77, 0.3);">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </div>
+                <h2 class="section-title">Cita Cancelada</h2>
+                <p class="section-desc">Tu cita ha sido liberada correctamente. Gracias por avisarnos.</p>
+                <a href="index.html" class="btn-primary" style="display: inline-flex; text-decoration: none; margin-top: 16px;">
+                    Agendar una nueva cita
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="footer">
+        &copy; 2026 Pragma AI Studio. Automatización Inteligente de Procesos.
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const alertBox = document.getElementById('alertBox');
+            const btnConfirmar = document.getElementById('btnConfirmarCancelacion');
+            const cancelInitialState = document.getElementById('cancelInitialState');
+            const cancelSuccessState = document.getElementById('cancelSuccessState');
+
+            if (!token) {
+                cancelInitialState.style.display = 'none';
+                alertBox.className = 'alert alert-danger';
+                alertBox.textContent = 'Enlace de cancelación inválido o incompleto (falta el token).';
+                alertBox.style.display = 'block';
+                return;
+            }
+
+            btnConfirmar.addEventListener('click', async () => {
+                btnConfirmar.disabled = true;
+                btnConfirmar.textContent = 'Procesando cancelación...';
+                alertBox.style.display = 'none';
+
+                try {
+                    const response = await fetch('/api/citas/cancelar/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Error al cancelar la cita');
+                    }
+
+                    cancelInitialState.style.display = 'none';
+                    cancelSuccessState.style.display = 'block';
+
+                } catch (err) {
+                    btnConfirmar.disabled = false;
+                    btnConfirmar.textContent = 'Sí, Cancelar mi Cita';
+                    alertBox.className = 'alert alert-danger';
+                    alertBox.textContent = err.message;
+                    alertBox.style.display = 'block';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

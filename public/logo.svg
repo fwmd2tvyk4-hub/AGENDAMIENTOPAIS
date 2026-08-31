@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="pragmaGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0066FF"/>
+      <stop offset="50%" stop-color="#00C3DE"/>
+      <stop offset="100%" stop-color="#55E6FF"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <!-- Logo de Pragma AI Studio: Emblema P futurista en degradado cian -->
+  <path d="M 45 155 L 70 92 L 122 92 C 136 92 146 82 146 68 C 146 54 136 44 122 44 L 62 44 L 72 22 L 128 22 C 156 22 178 42 178 68 C 178 94 156 114 128 114 L 88 114 L 70 155 Z" 
+        fill="url(#pragmaGrad)" 
+        filter="url(#glow)"/>
+</svg>
