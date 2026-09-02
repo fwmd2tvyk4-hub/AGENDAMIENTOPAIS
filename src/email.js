@@ -38,7 +38,7 @@ function formatearFechaHoraPanama(isoString) {
 /**
  * Enviar correo de confirmación al paciente con enlace de cancelación
  */
-async function enviarCorreoConfirmacionPaciente({ correo, nombre, fechaHoraUtc, tokenCancelacion }) {
+async function enviarCorreoConfirmacionPaciente({ citaId, correo, nombre, fechaHoraUtc, tokenCancelacion }) {
     if (!resend) {
         console.warn('⚠️ RESEND_API_KEY no configurada en .env. Se omite envío de correo al paciente.');
         return;
@@ -76,7 +76,7 @@ async function enviarCorreoConfirmacionPaciente({ correo, nombre, fechaHoraUtc, 
                 </div>
             `
         });
-        console.log(`✉️ Correo de confirmación enviado a ${correo}`);
+        console.log(`✉️ Correo de confirmación enviado (cita id=${citaId})`);
     } catch (err) {
         console.error('❌ Fallo al enviar correo al paciente (la cita sigue registrada):', err.message);
     }
@@ -85,7 +85,7 @@ async function enviarCorreoConfirmacionPaciente({ correo, nombre, fechaHoraUtc, 
 /**
  * Enviar aviso a la clínica cuando entra una nueva cita
  */
-async function enviarAvisoClinica({ nombre, telefono, correo, motivo, fechaHoraUtc }) {
+async function enviarAvisoClinica({ citaId, nombre, telefono, correo, motivo, fechaHoraUtc }) {
     if (!resend) {
         console.warn('⚠️ RESEND_API_KEY no configurada en .env. Se omite aviso a la clínica.');
         return;
@@ -113,7 +113,7 @@ async function enviarAvisoClinica({ nombre, telefono, correo, motivo, fechaHoraU
                 </div>
             `
         });
-        console.log(`✉️ Notificación enviada a la clínica (${clinicaEmail})`);
+        console.log(`✉️ Notificación enviada a la clínica (cita id=${citaId})`);
     } catch (err) {
         console.error('❌ Fallo al enviar notificación a la clínica:', err.message);
     }

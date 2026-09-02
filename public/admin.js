@@ -3,6 +3,18 @@
  * Autenticación con usuario + contraseña / JWT (24h)
  */
 
+// Escapa HTML para insertar de forma segura datos que vienen de la base de datos
+// (pueden haber sido escritos por un paciente sin autenticar vía POST /api/citas).
+const escapeHtml = (str) => {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     const loginCard        = document.getElementById('loginCard');
     const dashboardCard    = document.getElementById('dashboardCard');
@@ -256,28 +268,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
             tr.innerHTML = `
                 <td>
-                    <div style="font-family: var(--font-heading); font-weight: 700; color: var(--color-text-main);">${horaStr}</div>
-                    <div style="font-size: 0.78rem; color: var(--color-text-muted);">${fechaStr}</div>
+                    <div style="font-family: var(--font-heading); font-weight: 700; color: var(--color-text-main);">${escapeHtml(horaStr)}</div>
+                    <div style="font-size: 0.78rem; color: var(--color-text-muted);">${escapeHtml(fechaStr)}</div>
                 </td>
-                <td><strong style="color: var(--color-text-main);">${cita.nombre_paciente}</strong></td>
+                <td><strong style="color: var(--color-text-main);">${escapeHtml(cita.nombre_paciente)}</strong></td>
                 <td>
-                    <div>+507 ${cita.telefono}</div>
-                    <div style="font-size: 0.78rem; color: var(--color-text-muted);">${cita.correo}</div>
+                    <div>+507 ${escapeHtml(cita.telefono)}</div>
+                    <div style="font-size: 0.78rem; color: var(--color-text-muted);">${escapeHtml(cita.correo)}</div>
                 </td>
                 <td style="max-width: 180px; font-size: 0.85rem; color: var(--color-text-muted);">
-                    ${cita.motivo || '<em>Sin motivo</em>'}
+                    ${cita.motivo ? escapeHtml(cita.motivo) : '<em>Sin motivo</em>'}
                 </td>
                 <td>
                     <span class="badge ${esProgramada ? 'badge-programada' : 'badge-cancelada'}">
-                        ${cita.estado}
+                        ${escapeHtml(cita.estado)}
                     </span>
                 </td>
                 <td>
                     ${esProgramada
-                        ? `<button class="btn-sm-danger" onclick="cancelarCitaAdmin(${cita.id}, '${cita.nombre_paciente.replace(/'/g, "\\'")}')">Cancelar Cita</button>`
+                        ? '<button type="button" class="btn-sm-danger btn-cancelar-cita">Cancelar Cita</button>'
                         : '<span style="color: var(--color-text-muted); font-size: 0.8rem;">N/A</span>'
                     }
                 </td>`;
+
+            if (esProgramada) {
+                tr.querySelector('.btn-cancelar-cita').addEventListener('click', () => {
+                    cancelarCitaAdmin(cita.id, cita.nombre_paciente);
+                });
+            }
+
             citasTbody.appendChild(tr);
         });
     };
@@ -348,12 +367,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const [y, m, d] = item.fecha.split('T')[0].split('-');
             div.innerHTML = `
                 <div>
-                    <strong style="color: var(--color-text-main);">${d}/${m}/${y}</strong>
-                    <span style="color: var(--color-text-muted); margin-left: 8px;">(${item.motivo})</span>
+                    <strong style="color: var(--color-text-main);">${escapeHtml(d)}/${escapeHtml(m)}/${escapeHtml(y)}</strong>
+                    <span style="color: var(--color-text-muted); margin-left: 8px;">(${escapeHtml(item.motivo)})</span>
                 </div>
-                <button class="btn-sm-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="eliminarDiaBloqueado(${item.id})">
+                <button type="button" class="btn-sm-danger btn-eliminar-bloqueado" style="padding: 4px 8px; font-size: 0.75rem;">
                     Eliminar
                 </button>`;
+
+            div.querySelector('.btn-eliminar-bloqueado').addEventListener('click', () => {
+                eliminarDiaBloqueado(item.id);
+            });
+
             listaDiasBloqueados.appendChild(div);
         });
     };
@@ -493,21 +517,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const pacienteStr = r.nombre_paciente
-                ? `<strong style="color:var(--color-text-main)">${r.nombre_paciente}</strong>`
+                ? `<strong style="color:var(--color-text-main)">${escapeHtml(r.nombre_paciente)}</strong>`
                 : `<span style="color:var(--color-text-muted);font-style:italic">Cita eliminada</span>`;
 
             const motivoStr = r.motivo_admin
-                ? `<span style="font-size:0.85rem">${r.motivo_admin}</span>`
+                ? `<span style="font-size:0.85rem">${escapeHtml(r.motivo_admin)}</span>`
                 : `<span style="color:var(--color-text-muted)">—</span>`;
 
-            const etiqueta = ETIQUETAS_ACCION[r.accion] || r.accion;
+            const etiqueta = escapeHtml(ETIQUETAS_ACCION[r.accion] || r.accion);
 
             tr.innerHTML = `
                 <td>
-                    <div style="font-family:var(--font-heading);font-weight:700;color:var(--color-text-main);font-size:0.85rem">${accionHora}</div>
-                    <div style="font-size:0.78rem;color:var(--color-text-muted)">${accionFecha}</div>
+                    <div style="font-family:var(--font-heading);font-weight:700;color:var(--color-text-main);font-size:0.85rem">${escapeHtml(accionHora)}</div>
+                    <div style="font-size:0.78rem;color:var(--color-text-muted)">${escapeHtml(accionFecha)}</div>
                 </td>
-                <td style="font-family:var(--font-heading);font-weight:700;color:var(--color-cyan);font-size:0.9rem">${r.admin_username}</td>
+                <td style="font-family:var(--font-heading);font-weight:700;color:var(--color-cyan);font-size:0.9rem">${escapeHtml(r.admin_username)}</td>
                 <td><span class="badge badge-cancelada" style="font-size:0.72rem">${etiqueta}</span></td>
                 <td>${pacienteStr}</td>
                 <td>${citaStr}</td>

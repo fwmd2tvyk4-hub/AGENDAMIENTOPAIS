@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const { Pool } = require('pg');
 const cors = require('cors');
 const crypto = require('crypto');
@@ -10,13 +12,40 @@ const { generarCuposLibres } = require('./disponibilidad');
 const { enviarCorreoConfirmacionPaciente, enviarAvisoClinica } = require('./email');
 
 const app = express();
+
+// Railway pone la app detrás de un proxy/load balancer: sin esto, req.ip
+// y el key generator de express-rate-limit ven la IP del proxy, no la del cliente.
+app.set('trust proxy', 1);
+
+app.use(helmet({
+    // Google Fonts (usadas en index.html, admin.html y cancelar.html) requieren
+    // permitir su origen explícitamente; el resto se queda en el default de helmet.
+    contentSecurityPolicy: {
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            // 'unsafe-inline' se mantiene: el front usa style="..." inline y admin.html
+            // tiene un bloque <style> propio; sin esto Helmet rompería el layout.
+            'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            'font-src': ["'self'", "https://fonts.gstatic.com"],
+            // script-src se queda en el default ('self') a propósito: no hay ningún
+            // <script> inline (el de cancelar.html se movió a cancelar.js) ni scripts
+            // de terceros, así que no hace falta abrir 'unsafe-inline' aquí.
+        },
+    },
+    // Defensa explícita: cancelar.html lleva el token de cancelación en la URL
+    // y carga fuentes de Google; no depender del default del navegador.
+    referrerPolicy: { policy: 'no-referrer' },
+}));
+
 app.use(express.json());
 app.use(cors());
 
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use((req, res, next) => {
-    console.log(`[${new Date().toLocaleTimeString('es-PA')}] ${req.method} ${req.url}`);
+    // Solo el path, nunca el query string: el token de cancelación de
+    // /cancelar.html?token=... viaja ahí y no debe quedar en los logs de Railway.
+    console.log(`[${new Date().toLocaleTimeString('es-PA')}] ${req.method} ${req.path}`);
     next();
 });
 
@@ -42,6 +71,40 @@ pool.on('error', (err) => {
 // Hash ficticio para comparación constante cuando el usuario no existe,
 // evitando que un atacante distinga usuarios válidos por tiempo de respuesta.
 const DUMMY_HASH = '$2b$12$iqFRpZxeH5bfEHCq.GKh5OmLdIFmJfHBXuvaqSwnrW7i3WFYhCyWi';
+
+// Mensaje genérico: no revela el límite ni el tiempo restante para reintentar.
+const mensajeLimiteExcedido = (req, res) => {
+    res.status(429).json({ error: 'Demasiadas solicitudes. Intenta de nuevo más tarde.' });
+};
+
+// Crear cita: sin límite, un script llena la agenda y quema la cuota de Resend
+// (cada cita exitosa dispara 2 correos: enviarCorreoConfirmacionPaciente + enviarAvisoClinica).
+const limiteCrearCita = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    standardHeaders: false,
+    legacyHeaders: false,
+    handler: mensajeLimiteExcedido,
+});
+
+// Cancelar por token: token de 256 bits, riesgo de fuerza bruta despreciable,
+// pero igual se limita para no permitir spam de escritura en BD.
+const limiteCancelarToken = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 20,
+    standardHeaders: false,
+    legacyHeaders: false,
+    handler: mensajeLimiteExcedido,
+});
+
+// Login admin: limita fuerza bruta de contraseña.
+const limiteLoginAdmin = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    standardHeaders: false,
+    legacyHeaders: false,
+    handler: mensajeLimiteExcedido,
+});
 
 const verificarSesionAdmin = (req, res, next) => {
     const auth = req.headers['authorization'];
@@ -145,12 +208,12 @@ app.get('/api/cupos', async (req, res) => {
         res.json(diasSemana);
     } catch (err) {
         console.error('Error en GET /api/cupos:', err);
-        res.status(500).json({ error: 'Error interno obteniendo cupos', detalle: err.message });
+        res.status(500).json({ error: 'Error interno obteniendo cupos' });
     }
 });
 
 // 2. Crear una cita
-app.post('/api/citas', async (req, res) => {
+app.post('/api/citas', limiteCrearCita, async (req, res) => {
     const client = await pool.connect();
     try {
         const { fecha_hora_inicio, nombre_paciente, telefono, correo, motivo } = req.body;
@@ -200,8 +263,9 @@ app.post('/api/citas', async (req, res) => {
         const result = await client.query(insertQuery, [fecha_hora_inicio, nombre_paciente, telLimpio, correo, motivo, tokenCancelacion]);
         await client.query('COMMIT');
 
-        enviarCorreoConfirmacionPaciente({ correo, nombre: nombre_paciente, fechaHoraUtc: fecha_hora_inicio, tokenCancelacion });
-        enviarAvisoClinica({ nombre: nombre_paciente, telefono: telLimpio, correo, motivo, fechaHoraUtc: fecha_hora_inicio });
+        const citaId = result.rows[0].id;
+        enviarCorreoConfirmacionPaciente({ citaId, correo, nombre: nombre_paciente, fechaHoraUtc: fecha_hora_inicio, tokenCancelacion });
+        enviarAvisoClinica({ citaId, nombre: nombre_paciente, telefono: telLimpio, correo, motivo, fechaHoraUtc: fecha_hora_inicio });
 
         res.status(201).json({ mensaje: 'Cita creada exitosamente', cita: result.rows[0] });
 
@@ -218,7 +282,7 @@ app.post('/api/citas', async (req, res) => {
 });
 
 // 3. Cancelar con token (Paciente)
-app.post('/api/citas/cancelar/token', async (req, res) => {
+app.post('/api/citas/cancelar/token', limiteCancelarToken, async (req, res) => {
     try {
         const { token } = req.body;
         if (!token) return res.status(400).json({ error: 'Token requerido' });
@@ -242,7 +306,7 @@ app.post('/api/citas/cancelar/token', async (req, res) => {
 // ==========================================
 
 // Login con usuario y contraseña → emite JWT de 24h
-app.post('/api/admin/login', async (req, res) => {
+app.post('/api/admin/login', limiteLoginAdmin, async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -402,7 +466,7 @@ app.get('/api/admin/config', verificarSesionAdmin, async (req, res) => {
         });
     } catch (err) {
         console.error('Error en GET /api/admin/config:', err);
-        res.status(500).json({ error: 'Error al obtener configuración', detalle: err.message });
+        res.status(500).json({ error: 'Error al obtener configuración' });
     }
 });
 
