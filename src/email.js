@@ -11,6 +11,18 @@ const { Resend } = require('resend');
 // Inicializar cliente Resend solo si existe la API Key
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
+// Escapa HTML antes de insertar en el cuerpo de los correos: nombre, teléfono,
+// correo y motivo vienen de POST /api/citas, sin autenticar ni sanitizar.
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 /**
  * Formatea un timestamp ISO UTC a formato amigable en español / hora Panamá
  */
@@ -57,7 +69,7 @@ async function enviarCorreoConfirmacionPaciente({ citaId, correo, nombre, fechaH
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #0A2231; border: 1px solid #E2E8F0; border-radius: 8px; padding: 24px; background-color: #ffffff;">
                     <h2 style="color: #00C3DE; margin-top: 0;">¡Tu cita está confirmada!</h2>
-                    <p style="font-size: 16px;">Hola <strong>${nombre}</strong>,</p>
+                    <p style="font-size: 16px;">Hola <strong>${escapeHtml(nombre)}</strong>,</p>
                     <p style="font-size: 15px; color: #4A5568;">Hemos agendado tu cita exitosamente. A continuación encuentras los detalles:</p>
                     
                     <div style="background-color: #F2F6F7; padding: 18px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #00C3DE;">
@@ -104,11 +116,11 @@ async function enviarAvisoClinica({ citaId, nombre, telefono, correo, motivo, fe
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #0A2231; padding: 20px; border: 1px solid #CBD5E0; border-radius: 8px;">
                     <h3 style="color: #0A2231; margin-top: 0;">Se ha registrado una nueva cita</h3>
                     <ul style="line-height: 1.8; font-size: 15px;">
-                        <li><strong>Paciente:</strong> ${nombre}</li>
-                        <li><strong>Teléfono:</strong> +507 ${telefono}</li>
-                        <li><strong>Correo:</strong> ${correo}</li>
+                        <li><strong>Paciente:</strong> ${escapeHtml(nombre)}</li>
+                        <li><strong>Teléfono:</strong> +507 ${escapeHtml(telefono)}</li>
+                        <li><strong>Correo:</strong> ${escapeHtml(correo)}</li>
                         <li><strong>Fecha y Hora:</strong> ${fechaHoraFormateada}</li>
-                        <li><strong>Motivo:</strong> ${motivo || 'No especificado'}</li>
+                        <li><strong>Motivo:</strong> ${motivo ? escapeHtml(motivo) : 'No especificado'}</li>
                     </ul>
                 </div>
             `

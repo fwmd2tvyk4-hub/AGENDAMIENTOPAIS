@@ -18,6 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const confNombre = document.getElementById('confNombre');
     const confFechaHora = document.getElementById('confFechaHora');
+    const btnAgendarOtraCita = document.getElementById('btnAgendarOtraCita');
+
+    // Movido de onclick inline en el HTML: el CSP de Helmet (script-src 'self',
+    // sin 'unsafe-inline') bloquea los handlers inline.
+    btnAgendarOtraCita.addEventListener('click', () => window.location.reload());
 
     let datosSemana = [];
     let diaSeleccionadoYMD = null;
