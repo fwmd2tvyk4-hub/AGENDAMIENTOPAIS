@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="styles.css">
+    <script src="i18n.js"></script>
 </head>
 <body>
 
@@ -19,26 +20,31 @@
             <img src="logo.svg" alt="Pragma AI Studio Logo" class="brand-logo-img">
             <div>
                 <div class="brand-title">Pragma AI Studio</div>
-                <div class="brand-subtitle">Cancelación de Cita</div>
+                <div class="brand-subtitle" data-i18n="brand.subtitle.cancel">Cancelación de Cita</div>
             </div>
         </a>
+        <button id="langToggle" class="lang-toggle" type="button" aria-label="Cambiar idioma / Switch language">
+            <span class="lang-toggle-pill"></span>
+            <span class="lang-option" data-lang-opt="es">ES</span>
+            <span class="lang-option" data-lang-opt="en">EN</span>
+        </button>
     </header>
 
     <main class="main-container">
         <div class="glass-card" style="max-width: 520px; margin: 40px auto; text-align: center;">
-            
+
             <div id="alertBox" class="alert" style="display: none;"></div>
 
             <div id="cancelInitialState">
-                <h1 class="section-title" style="margin-bottom: 12px; font-size: 1.4rem;">¿Deseas cancelar tu cita?</h1>
-                <p class="section-desc" style="margin-bottom: 24px;">Al confirmar, la cita quedará anulada y el cupo se liberará inmediatamente para otros pacientes.</p>
+                <h1 class="section-title" style="margin-bottom: 12px; font-size: 1.4rem;" data-i18n="cancel.title">¿Deseas cancelar tu cita?</h1>
+                <p class="section-desc" style="margin-bottom: 24px;" data-i18n="cancel.desc">Al confirmar, la cita quedará anulada y el cupo se liberará inmediatamente para otros pacientes.</p>
 
                 <button id="btnConfirmarCancelacion" class="btn-primary" style="background: var(--color-error); color: #FFFFFF; box-shadow: 0 4px 20px rgba(255, 77, 77, 0.4);">
-                    Sí, Cancelar mi Cita
+                    <span data-i18n="cancel.confirmBtn">Sí, Cancelar mi Cita</span>
                 </button>
-                
+
                 <p style="margin-top: 20px;">
-                    <a href="index.html" style="color: var(--color-text-muted); font-size: 0.9rem; text-decoration: underline;">Volver a la página principal</a>
+                    <a href="index.html" style="color: var(--color-text-muted); font-size: 0.9rem; text-decoration: underline;" data-i18n="cancel.backLink">Volver a la página principal</a>
                 </p>
             </div>
 
@@ -49,9 +55,9 @@
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </div>
-                <h2 class="section-title">Cita Cancelada</h2>
-                <p class="section-desc">Tu cita ha sido liberada correctamente. Gracias por avisarnos.</p>
-                <a href="index.html" class="btn-primary" style="display: inline-flex; text-decoration: none; margin-top: 16px;">
+                <h2 class="section-title" data-i18n="cancel.successTitle">Cita Cancelada</h2>
+                <p class="section-desc" data-i18n="cancel.successDesc">Tu cita ha sido liberada correctamente. Gracias por avisarnos.</p>
+                <a href="index.html" class="btn-primary" style="display: inline-flex; text-decoration: none; margin-top: 16px;" data-i18n="cancel.newAppointment">
                     Agendar una nueva cita
                 </a>
             </div>
@@ -60,7 +66,14 @@
     </main>
 
     <footer class="footer">
-        &copy; 2026 Pragma AI Studio. Automatización Inteligente de Procesos.
+        <div data-i18n="footer.text">&copy; 2026 Pragma AI Studio. Automatización Inteligente de Procesos.</div>
+        <div class="footer-links">
+            <a href="terminos.html" data-i18n="footer.terms">Términos y Condiciones</a>
+            <span class="footer-sep">&middot;</span>
+            <a href="privacidad.html" data-i18n="footer.privacy">Aviso de Privacidad</a>
+            <span class="footer-sep">&middot;</span>
+            <span data-i18n="footer.contact">Contacto: pragma.pa@gmail.com</span>
+        </div>
     </footer>
 
     <script src="cancelar.js"></script>

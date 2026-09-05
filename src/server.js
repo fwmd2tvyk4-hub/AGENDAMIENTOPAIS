@@ -216,7 +216,11 @@ app.get('/api/cupos', async (req, res) => {
 app.post('/api/citas', limiteCrearCita, async (req, res) => {
     const client = await pool.connect();
     try {
-        const { fecha_hora_inicio, nombre_paciente, telefono, correo, motivo } = req.body;
+        const { fecha_hora_inicio, nombre_paciente, telefono, correo, motivo, consentimiento_aceptado } = req.body;
+
+        if (consentimiento_aceptado !== true) {
+            return res.status(400).json({ error: 'Debes aceptar los Términos y Condiciones y el Aviso de Privacidad para agendar.' });
+        }
 
         if (!nombre_paciente || nombre_paciente.trim().length === 0) {
             return res.status(400).json({ error: 'El nombre es obligatorio' });
@@ -257,10 +261,10 @@ app.post('/api/citas', limiteCrearCita, async (req, res) => {
 
         await client.query('BEGIN');
         const insertQuery = `
-            INSERT INTO citas (fecha_hora_inicio, nombre_paciente, telefono, correo, motivo, token_cancelacion)
-            VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, fecha_hora_inicio
+            INSERT INTO citas (fecha_hora_inicio, nombre_paciente, telefono, correo, motivo, token_cancelacion, consentimiento_aceptado)
+            VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, fecha_hora_inicio
         `;
-        const result = await client.query(insertQuery, [fecha_hora_inicio, nombre_paciente, telLimpio, correo, motivo, tokenCancelacion]);
+        const result = await client.query(insertQuery, [fecha_hora_inicio, nombre_paciente, telLimpio, correo, motivo, tokenCancelacion, true]);
         await client.query('COMMIT');
 
         const citaId = result.rows[0].id;

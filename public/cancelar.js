@@ -14,14 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!token) {
         cancelInitialState.style.display = 'none';
         alertBox.className = 'alert alert-danger';
-        alertBox.textContent = 'Enlace de cancelación inválido o incompleto (falta el token).';
+        alertBox.textContent = PragmaI18n.t('js.invalidCancelLink');
         alertBox.style.display = 'block';
         return;
     }
 
     btnConfirmar.addEventListener('click', async () => {
         btnConfirmar.disabled = true;
-        btnConfirmar.textContent = 'Procesando cancelación...';
+        btnConfirmar.textContent = PragmaI18n.t('js.cancelling');
         alertBox.style.display = 'none';
 
         try {
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || 'Error al cancelar la cita');
+                throw new Error(data.error || PragmaI18n.t('js.cancelFailed'));
             }
 
             cancelInitialState.style.display = 'none';
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (err) {
             btnConfirmar.disabled = false;
-            btnConfirmar.textContent = 'Sí, Cancelar mi Cita';
+            btnConfirmar.textContent = PragmaI18n.t('cancel.confirmBtn');
             alertBox.className = 'alert alert-danger';
             alertBox.textContent = err.message;
             alertBox.style.display = 'block';

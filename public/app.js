@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const actualizarLabel = () => {
         if (datosSemana.length === 0) {
-            weekRangeLabel.textContent = 'Sin días disponibles';
+            weekRangeLabel.textContent = PragmaI18n.t('js.noDaysAvailable');
             return;
         }
         const primera = datosSemana[0].fecha;
@@ -61,8 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const [y1, m1, d1] = primera.split('-').map(Number);
         const [y2, m2, d2] = ultima.split('-').map(Number);
         const opts = { day: 'numeric', month: 'short', timeZone: 'UTC' };
-        const f1 = new Date(Date.UTC(y1, m1 - 1, d1, 12)).toLocaleDateString('es-PA', opts);
-        const f2 = new Date(Date.UTC(y2, m2 - 1, d2, 12)).toLocaleDateString('es-PA', opts);
+        const f1 = new Date(Date.UTC(y1, m1 - 1, d1, 12)).toLocaleDateString(PragmaI18n.LOCALE_TAG, opts);
+        const f2 = new Date(Date.UTC(y2, m2 - 1, d2, 12)).toLocaleDateString(PragmaI18n.LOCALE_TAG, opts);
         weekRangeLabel.textContent = `${f1} — ${f2}`;
     };
 
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const hoy = obtenerFechaHoyPanama();
         const fechaInicio = sumarDias(hoy, offsetSemana);
         mostrarAlerta(null);
-        weekSelector.innerHTML = `<div style="padding: 16px; color: var(--color-text-muted); font-size: 0.9rem;">Cargando disponibilidad...</div>`;
+        weekSelector.innerHTML = `<div style="padding: 16px; color: var(--color-text-muted); font-size: 0.9rem;">${PragmaI18n.t('js.weekLoadingShort')}</div>`;
 
         try {
             const res = await fetch(`/api/cupos?fecha=${fechaInicio}`);
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error(err);
             mostrarAlerta(err.message, 'danger');
-            weekSelector.innerHTML = `<div style="color: var(--color-error); padding: 16px;">No se pudieron cargar los horarios. Intenta recargar la página.</div>`;
+            weekSelector.innerHTML = `<div style="color: var(--color-error); padding: 16px;">${PragmaI18n.t('js.weekLoadError')}</div>`;
         }
     };
 
@@ -119,8 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const [year, month, day] = item.fecha.split('-').map(Number);
             const dateObj = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 
-            const nombreDia = dateObj.toLocaleDateString('es-PA', { weekday: 'short', timeZone: 'UTC' }).replace('.', '');
-            const nombreMes = dateObj.toLocaleDateString('es-PA', { month: 'short', timeZone: 'UTC' }).replace('.', '');
+            const nombreDia = dateObj.toLocaleDateString(PragmaI18n.LOCALE_TAG, { weekday: 'short', timeZone: 'UTC' }).replace('.', '');
+            const nombreMes = dateObj.toLocaleDateString(PragmaI18n.LOCALE_TAG, { month: 'short', timeZone: 'UTC' }).replace('.', '');
 
             const tab = document.createElement('div');
             tab.className = `day-tab ${item.fecha === diaSeleccionadoYMD ? 'active' : ''}`;
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
-                    <span>No hay horarios disponibles para el día seleccionado.</span>
+                    <span>${PragmaI18n.t('js.noSlotsAvailable')}</span>
                 </div>
             `;
             return;
@@ -214,7 +214,12 @@ document.addEventListener('DOMContentLoaded', () => {
         mostrarAlerta(null);
 
         if (!slotSeleccionadoUtc) {
-            mostrarAlerta('Por favor selecciona una hora disponible.', 'danger');
+            mostrarAlerta(PragmaI18n.t('js.selectSlotFirst'), 'danger');
+            return;
+        }
+
+        if (!document.getElementById('consentimiento').checked) {
+            mostrarAlerta(PragmaI18n.t('js.consentRequired'), 'danger');
             return;
         }
 
@@ -225,12 +230,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const telLimpio = telefono.replace(/\s+/g, '').replace(/^\+507/, '');
         if (!/^[234689]\d{7}$/.test(telLimpio)) {
-            mostrarAlerta('El teléfono debe ser un número válido de Panamá (8 dígitos).', 'danger');
+            mostrarAlerta(PragmaI18n.t('js.invalidPhone'), 'danger');
             return;
         }
 
         submitBtn.disabled = true;
-        submitBtn.querySelector('span').textContent = 'Agendando tu cita...';
+        submitBtn.querySelector('span').textContent = PragmaI18n.t('js.booking');
 
         try {
             const response = await fetch('/api/citas', {
@@ -241,7 +246,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     nombre_paciente: nombre,
                     telefono: telLimpio,
                     correo: correo,
-                    motivo: motivo
+                    motivo: motivo,
+                    consentimiento_aceptado: document.getElementById('consentimiento').checked
                 })
             });
 
@@ -254,21 +260,21 @@ document.addEventListener('DOMContentLoaded', () => {
             confNombre.textContent = nombre;
 
             const dateObj = new Date(slotSeleccionadoUtc);
-            const fechaFormateada = dateObj.toLocaleDateString('es-PA', {
+            const fechaFormateada = dateObj.toLocaleDateString(PragmaI18n.LOCALE_TAG, {
                 timeZone: 'America/Panama',
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric'
             });
-            const horaFormateada = dateObj.toLocaleTimeString('es-PA', {
+            const horaFormateada = dateObj.toLocaleTimeString(PragmaI18n.LOCALE_TAG, {
                 timeZone: 'America/Panama',
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: true
             });
 
-            confFechaHora.textContent = `${fechaFormateada} a las ${horaFormateada}`;
+            confFechaHora.textContent = `${fechaFormateada}${PragmaI18n.t('js.dateTimeJoiner')}${horaFormateada}`;
 
             bookingView.style.display = 'none';
             confirmationScreen.style.display = 'block';
@@ -280,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } finally {
             submitBtn.disabled = false;
-            submitBtn.querySelector('span').textContent = 'Confirmar y Agendar Cita';
+            submitBtn.querySelector('span').textContent = PragmaI18n.t('booking.submit');
         }
     });
 
@@ -294,6 +300,16 @@ document.addEventListener('DOMContentLoaded', () => {
         alertBox.style.display = 'block';
         alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+
+    // Re-renderizar textos dinámicos al cambiar de idioma
+    document.addEventListener('pragma:langchange', () => {
+        actualizarLabel();
+        if (datosSemana.length > 0) {
+            renderizarSelectorDias();
+            const diaData = datosSemana.find(d => d.fecha === diaSeleccionadoYMD);
+            renderizarCupos(diaData ? diaData.cupos : []);
+        }
+    });
 
     // Inicializar: primero config, luego cupos
     cargarConfig().then(() => cargarCuposSemana());
